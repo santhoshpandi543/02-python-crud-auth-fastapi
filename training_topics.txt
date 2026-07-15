@@ -1,0 +1,10 @@
+1. Python Fundamentals Refresher (Data Types, Functions, OOP)
+2. Advanced Python (Decorators, Generators, Context Managers)
+3. Virtual Environments & Package Management
+4. File Handling & JSON/XML Processing
+5. Multithreading & Multiprocessing
+6. Asynchronous Programming (AsyncIO)
+7. REST API Development with FastAPI
+8. Database Integration (SQLAlchemy & PostgreSQL)
+9. Testing with PyTest
+10. Python Project Structure & Best Practices
