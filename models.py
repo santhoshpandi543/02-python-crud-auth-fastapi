@@ -1,9 +1,10 @@
-from sqlalchemy import Column, ForeignKey, String, Boolean
-from database import Base
+from sqlalchemy import Column, ForeignKey, String, Boolean, Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
-from typing import Optional
-
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from enum import Enum
+
+# From our File
+from database import Base
 
 
 class TStatus(Enum):
@@ -12,16 +13,13 @@ class TStatus(Enum):
     FAILED = "FAILED"
 
 
-class Author:
-    name: str
-    age: int
-
-
 class Todo(Base):
     __tablename__ = "todos"
 
     todo_id: Mapped[int] = mapped_column(primary_key=True, index=True)
     title: Mapped[str] = mapped_column(nullable=False)
-    author: Mapped[Author]
-    keywords: Mapped[list[str]]
-    completed: Mapped[TStatus] = mapped_column(default="PENDING")
+    author: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    keywords: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
+    completed: Mapped[TStatus] = mapped_column(
+        SqlEnum(TStatus), default=TStatus.PENDING
+    )

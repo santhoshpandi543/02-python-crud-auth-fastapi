@@ -1,17 +1,26 @@
-from pydantic import BaseModel
-from models import TStatus, Author
+from pydantic import BaseModel, ConfigDict, Field
+from models import TStatus
+from typing import Literal
+
+
+class AuthorSchema(BaseModel):
+    name: str
+    age: int
 
 
 class TodoBase(BaseModel):
     title: str
-    author: Author
+    author: AuthorSchema
     keywords: list[str]
     completed: TStatus = TStatus.PENDING
+
 
 class TodoCreate(TodoBase):
     pass
 
-class Todo(TodoBase):
+
+class TodoResponse(TodoBase):
     todo_id: int
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
+
+
