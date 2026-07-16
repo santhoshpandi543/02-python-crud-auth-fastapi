@@ -1,30 +1,22 @@
-from fastapi import FastAPI, Query, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Annotated
+from sqlalchemy.orm import Session
 
-# Our File
-from schemas import TodoResponse, TodoCreate
-from database import SessionLocal, engine, Base
-from models import Todo as TodoModel
+# Our Files
+from app.schemas.todos import TodoResponse, TodoCreate, QueryParams
+from app.models.todos import Todo as TodoModel
+from app.dependencies import get_db
 
-# To tell Sqlalchemy to build the tables in Postgre
-Base.metadata.create_all(bind=engine)
-
-app = FastAPI()
-
-
-# Dependency for DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
+router = APIRouter(
+    prefix='/todos',
+    tags=['items'],
+    # dependencies=[Depends(get_db)]
+    # responses={}
+)
 
 # POST - Create Todo
-@app.post("/todos", response_model=TodoResponse)
-def create_todo(todo: TodoCreate, db: Session = Depends(get_db)):
+@router.post("/", response_model=TodoResponse)
+def create_todo(todo: TodoCreate, db: Session =Depends(get_db)):
 
     # Since `**Pydantic obj**` is differ from `SqlAlchemy obj`, we can't simply pass it in the Database. so,
 
@@ -40,17 +32,17 @@ def create_todo(todo: TodoCreate, db: Session = Depends(get_db)):
 
 
 # GET - Get All Todos
-@app.get("/todos", response_model=list[TodoResponse])
+@router.get("/", tags=['todo'], response_model=list[TodoResponse])
 def get_all_todos(
-    # filter_query: Annotated[QueryParams, Query()],
+    filter_query: Annotated[QueryParams, Query()],
     db: Session = Depends(get_db),
 ):
-    # print(filter_query)
+    print(filter_query)
     return db.query(TodoModel).all()
 
 
 # GET - Get Single Todo
-@app.get("/todos/{todo_id}", response_model=TodoResponse)
+@router.get("/{todo_id}", response_model=TodoResponse)
 def get_todo_by_id(todo_id: int, db: Session = Depends(get_db)):
     todo = db.query(TodoModel).filter(TodoModel.todo_id == todo_id).first()
     if not todo:
@@ -59,7 +51,7 @@ def get_todo_by_id(todo_id: int, db: Session = Depends(get_db)):
 
 
 # PUT - Update Todo
-@app.put("/todos/{todo_id}", response_model=TodoResponse)
+@router.put("/{todo_id}", response_model=TodoResponse)
 def update_todo(todo_id: int, updated_data: TodoCreate, db: Session = Depends(get_db)):
     todo = db.query(TodoModel).filter(TodoModel.todo_id == todo_id).first()
     if not todo:
@@ -77,7 +69,7 @@ def update_todo(todo_id: int, updated_data: TodoCreate, db: Session = Depends(ge
 
 
 # DEL - Delete Todo
-@app.delete("/todos/{todo_id}", status_code=200)
+@router.delete("/{todo_id}", status_code=200)
 def delete_todo(todo_id: int, db: Session = Depends(get_db)):
     todo = db.query(TodoModel).filter(TodoModel.todo_id == todo_id).first()
     if not todo:

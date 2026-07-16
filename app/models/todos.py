@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from enum import Enum
 
 # From our File
-from database import Base
+from app.database import Base
 
 
 class TStatus(Enum):

@@ -1,4 +1,5 @@
 ### Reference Link
+
 https://medium.com/@JavaFusion/build-your-first-fastapi-app-from-virtual-environment-to-uvicorn-server-342e1d069900
 
 <hr>
@@ -15,7 +16,10 @@ deactivate
 
 # 3. Install required packages
 pip install fastapi uvicorn python-dotenv
-pip install sqlalchemy psycopg2-binary 
+pip install sqlalchemy psycopg2-binary
+
+# Instead of dotenv.. use this for Industry standard
+pip install pydantic-settings
 
 # 4. To generate requirements.txt (like package.json)
 pip freeze > requirements.txt
@@ -24,12 +28,14 @@ pip freeze > requirements.txt
 pip install -r requirements.txt
 
 # 5. To start the server
-uvicorn main:app - reload
+uvicorn app.main:app --reload
+# uvicorn main:app --reload
 ```
 
-
 ### For Swagger UI
+
 http://127.0.0.1:8000/docs
 
 ### For ReDoc
+
 http://127.0.0.1:8000/redoc
