@@ -5,46 +5,35 @@ from sqlalchemy.orm import Session
 # Our Files
 from app.schemas.todos import TodoResponse, TodoCreate, QueryParams
 from app.models.todos import Todo as TodoModel
-from app.dependencies import get_db
+from app.core.dependencies import get_db
+from app.services.todos import TodoService
 
 router = APIRouter(
-    prefix='/todos',
-    tags=['items'],
-    # dependencies=[Depends(get_db)]
+    prefix="/todos",
+    tags=["todos"],
+    dependencies=[Depends(get_db)],
     # responses={}
 )
 
+service = TodoService()
+
+
 # POST - Create Todo
 @router.post("/", response_model=TodoResponse)
-def create_todo(todo: TodoCreate, db: Session =Depends(get_db)):
-
-    # Since `**Pydantic obj**` is differ from `SqlAlchemy obj`, we can't simply pass it in the Database. so,
-
-    todo_data = todo.model_dump() # Pydantic obj -> Python dict
-
-    db_todo = TodoModel(**todo_data) # Python dict -> SqlAlchemy object
-
-    db.add(db_todo)
-    db.commit()
-    db.refresh(db_todo)
-
-    return db_todo
+def create_todo(todo: TodoCreate):
+    return service.create(todo)
 
 
 # GET - Get All Todos
-@router.get("/", tags=['todo'], response_model=list[TodoResponse])
-def get_all_todos(
-    filter_query: Annotated[QueryParams, Query()],
-    db: Session = Depends(get_db),
-):
-    print(filter_query)
-    return db.query(TodoModel).all()
+@router.get("/", response_model=list[TodoResponse])
+def get_all_todos(filter_query: Annotated[QueryParams, Query()]):
+    return service.get_all(filter_query)
 
 
 # GET - Get Single Todo
 @router.get("/{todo_id}", response_model=TodoResponse)
-def get_todo_by_id(todo_id: int, db: Session = Depends(get_db)):
-    todo = db.query(TodoModel).filter(TodoModel.todo_id == todo_id).first()
+def get_todo_by_id(todo_id: int):
+    todo = service.get_by_id(todo_id)
     if not todo:
         raise HTTPException(status_code=404, detail="Todo id Invalid")
     return todo
@@ -52,30 +41,25 @@ def get_todo_by_id(todo_id: int, db: Session = Depends(get_db)):
 
 # PUT - Update Todo
 @router.put("/{todo_id}", response_model=TodoResponse)
-def update_todo(todo_id: int, updated_data: TodoCreate, db: Session = Depends(get_db)):
-    todo = db.query(TodoModel).filter(TodoModel.todo_id == todo_id).first()
-    if not todo:
-        raise HTTPException(status_code=404, detail="Todo id Invalid")
+def update_todo(todo_id: int, updated_data: TodoCreate):
 
-    updated_dict = updated_data.model_dump()
+    result = service.update(todo_id=todo_id, updated_data=updated_data)
 
-    for key, value in updated_dict.items():
-        setattr(todo, key, value)
+    if result["success"] == False:
+        if result["error"] == "NOT_FOUND":
+            raise HTTPException(status_code=404, detail=result["message"])
 
-    db.commit()
-    db.refresh(todo)
-
-    return todo
+    return result["data"]
 
 
 # DEL - Delete Todo
 @router.delete("/{todo_id}", status_code=200)
-def delete_todo(todo_id: int, db: Session = Depends(get_db)):
-    todo = db.query(TodoModel).filter(TodoModel.todo_id == todo_id).first()
-    if not todo:
-        raise HTTPException(status_code=404, detail="Todo id Invalid")
+def delete_todo(todo_id: int):
+    
+    result = service.delete(todo_id=todo_id)
 
-    db.delete(todo)
-    db.commit()
+    if result["success"] == False:
+        if result["error"] == "NOT_FOUND":
+            raise HTTPException(status_code=404, detail=result["message"])
 
-    return {"message": f"Todo with id {todo_id} has been successfully deleted"}
+    return result
